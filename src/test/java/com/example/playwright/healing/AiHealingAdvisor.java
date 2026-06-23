@@ -14,7 +14,7 @@ public final class AiHealingAdvisor {
             .connectTimeout(Duration.ofSeconds(10))
             .build();
 
-    public String advise(String logicalElementName, McpPageSnapshot snapshot) {
+    public String advise(String logicalElementName, PageSnapshot snapshot) {
         String prompt = snapshot.toPrompt(logicalElementName);
         if (!TestConfig.aiHealingEnabled()) {
             return "AI healing disabled. Set AI_HEALING_ENABLED=true and OPENAI_API_KEY to request advice.\n\n" + prompt;

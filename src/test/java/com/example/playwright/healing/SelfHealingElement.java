@@ -61,7 +61,7 @@ public final class SelfHealingElement {
             }
         }
 
-        McpPageSnapshot snapshot = McpPageSnapshot.capture(page);
+        PageSnapshot snapshot = PageSnapshot.capture(page);
         String advice = aiHealingAdvisor.advise(definition.logicalName(), snapshot);
         throw new AssertionError("""
                 Unable to locate self-healing element: %s
@@ -69,7 +69,7 @@ public final class SelfHealingElement {
                 Tried strategies:
                 %s
 
-                AI/MCP healing advice:
+                AI healing advice:
                 %s
                 """.formatted(definition.logicalName(), strategyNames(), advice), lastFailure);
     }

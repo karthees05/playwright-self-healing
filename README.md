@@ -1,8 +1,8 @@
-# playwright-mcp-usage
+# playwright-self-healing
 
 Java + Gradle + Cucumber + Playwright demo automation framework using the
-page-object pattern, deterministic self-healing locators, and optional AI/MCP
-style locator-healing advice.
+page-object pattern, deterministic self-healing locators, and optional AI
+locator-healing advice.
 
 ## Demo Application
 
@@ -20,7 +20,7 @@ Credentials used by the smoke scenario:
 - `src/test/resources/features` - Cucumber feature files
 - `src/test/java/com/example/playwright/steps` - Cucumber hooks and step definitions
 - `src/test/java/com/example/playwright/pages` - page objects only; all web elements live here
-- `src/test/java/com/example/playwright/healing` - self-healing locator and AI/MCP snapshot support
+- `src/test/java/com/example/playwright/healing` - self-healing locator and AI snapshot support
 - `src/test/java/com/example/playwright/core` - Playwright driver lifecycle and evidence capture
 - `src/test/java/com/example/playwright/config` - runtime configuration
 - `.github/workflows/playwright-self-healing-tests.yml` - GitHub Actions pipeline
@@ -60,7 +60,7 @@ flowchart TD
     F --> G[Try next locator strategy]
     G -->|found and action passed| H[Record healing event]
     H --> I[Scenario continues]
-    G -->|all strategies fail| J[Capture MCP-style page snapshot]
+    G -->|all strategies fail| J[Capture page snapshot]
     J --> K[Ask AI advisor if enabled]
     K --> L[Fail scenario with tried strategies and advice]
     I --> M[After hook]
@@ -97,19 +97,18 @@ If multiple scenarios use the same healed element, each affected scenario gets
 its own report attachment. Scenarios with no healing do not get a
 `self-healing-report.txt` attachment.
 
-## MCP-Style Snapshot and AI Advice
+## Page Snapshot and AI Advice
 
-This project does not use an external MCP SDK or MCP library. The MCP-style
-part is implemented with custom Java code in `McpPageSnapshot`, using Playwright
-to collect structured page context.
+The page snapshot is implemented with custom Java code in `PageSnapshot`, using
+Playwright to collect structured page context.
 
 There are two levels of recovery:
 
 - Deterministic fallback healing: tries the locator strategies already defined
   in the page object. This is what lets a test pass when a later locator works.
-- MCP-style AI advice: used only after every locator strategy fails.
+- AI healing advice: used only after every locator strategy fails.
 
-On final failure, the framework captures an MCP-style page snapshot containing:
+On final failure, the framework captures a page snapshot containing:
 
 - current URL and title
 - visible page text
@@ -134,7 +133,7 @@ Run the Cucumber tests:
 ./gradlew test
 ```
 
-Run with AI/MCP advice enabled:
+Run with AI healing advice enabled:
 
 ```bash
 AI_HEALING_ENABLED=true OPENAI_API_KEY=... ./gradlew test
@@ -225,7 +224,7 @@ Artifact contents:
 - `build/reports/tests/test`
 - `build/evidence`
 
-To enable AI/MCP advice in GitHub Actions, create a repository secret:
+To enable AI healing advice in GitHub Actions, create a repository secret:
 
 `OPENAI_API_KEY`
 
@@ -245,7 +244,7 @@ repair guidance.
    events.
 6. If healing happened, the hook writes a visible scenario log and attaches
    `self-healing-report.txt`.
-7. If all strategies fail, the framework captures an MCP-style page snapshot and
+7. If all strategies fail, the framework captures a page snapshot and
    includes optional AI advice in the assertion failure.
 8. Locally and in GitHub Actions, the same Gradle test command generates the
    Cucumber HTML/JSON reports.

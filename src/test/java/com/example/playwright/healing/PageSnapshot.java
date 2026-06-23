@@ -2,8 +2,8 @@ package com.example.playwright.healing;
 
 import com.microsoft.playwright.Page;
 
-public record McpPageSnapshot(String url, String title, String visibleText, String interactiveElements) {
-    public static McpPageSnapshot capture(Page page) {
+public record PageSnapshot(String url, String title, String visibleText, String interactiveElements) {
+    public static PageSnapshot capture(Page page) {
         String visibleText = safe(() -> page.locator("body").innerText());
         String interactiveElements = safe(() -> (String) page.evaluate("""
                 () => Array.from(document.querySelectorAll('input, button, a, textarea, select, [role]'))
@@ -17,7 +17,7 @@ public record McpPageSnapshot(String url, String title, String visibleText, Stri
                   })
                   .join('\\n')
                 """));
-        return new McpPageSnapshot(page.url(), safe(page::title), visibleText, interactiveElements);
+        return new PageSnapshot(page.url(), safe(page::title), visibleText, interactiveElements);
     }
 
     public String toPrompt(String logicalElementName) {
