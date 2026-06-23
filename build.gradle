@@ -1,0 +1,42 @@
+plugins {
+    id 'java'
+}
+
+group = 'com.example'
+version = '1.0.0-SNAPSHOT'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+dependencies {
+    testImplementation 'com.microsoft.playwright:playwright:1.45.1'
+    testImplementation 'io.cucumber:cucumber-java:7.18.1'
+    testImplementation 'io.cucumber:cucumber-junit-platform-engine:7.18.1'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.10.2'
+    testImplementation 'org.junit.platform:junit-platform-suite:1.10.2'
+    testImplementation 'org.slf4j:slf4j-simple:2.0.13'
+}
+
+tasks.withType(Test).configureEach {
+    useJUnitPlatform()
+    systemProperty 'cucumber.plugin', System.getProperty(
+            'cucumber.plugin',
+            'pretty, html:build/reports/cucumber/cucumber.html, json:build/reports/cucumber/cucumber.json'
+    )
+    systemProperty 'cucumber.filter.tags', System.getProperty('cucumber.filter.tags', 'not @wip')
+    testLogging {
+        events 'passed', 'skipped', 'failed'
+        exceptionFormat 'full'
+    }
+}
+
+tasks.register('installPlaywrightBrowsers', JavaExec) {
+    group = 'verification'
+    description = 'Downloads browser binaries required by Playwright.'
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.microsoft.playwright.CLI'
+    args 'install'
+}
