@@ -1,8 +1,8 @@
 # playwright-mcp-usage
 
 Java + Gradle + Cucumber + Playwright demo automation framework using the
-page-object pattern, primary locators, and the official Playwright MCP server
-for runtime locator healing.
+page-object pattern, primary locators, an AI self-healing agent, and the
+official Playwright MCP server for runtime locator healing.
 
 ## Demo Application
 
@@ -20,7 +20,7 @@ Credentials used by the smoke scenario:
 - `src/test/resources/features` - Cucumber feature files
 - `src/test/java/com/example/playwright/steps` - Cucumber hooks and step definitions
 - `src/test/java/com/example/playwright/pages` - page objects only; all web elements live here
-- `src/test/java/com/example/playwright/healing` - Playwright MCP client, locator conversion, and healing report support
+- `src/test/java/com/example/playwright/healing` - AI self-healing agent, Playwright MCP client, locator conversion, and healing report support
 - `src/test/java/com/example/playwright/core` - Playwright driver lifecycle and evidence capture
 - `src/test/java/com/example/playwright/config` - runtime configuration
 - `.github/workflows/playwright-self-healing-tests.yml` - GitHub Actions pipeline
@@ -29,9 +29,10 @@ Credentials used by the smoke scenario:
 
 Each page object element is defined as an `ElementDefinition` with one primary
 locator and optional intent hints. If the primary locator fails, the framework
-starts the official Playwright MCP server with `npx @playwright/mcp@latest`,
-asks MCP to find the target element, asks `browser_generate_locator` for a
-stable locator, converts that locator to Playwright Java, and retries the action.
+delegates the failure to `AiSelfHealingAgent`. The agent starts the official
+Playwright MCP server with `npx @playwright/mcp@latest`, asks MCP to find the
+target element, asks `browser_generate_locator` for a stable locator, converts
+that locator to Playwright Java, and returns a healing decision for retry.
 
 Example from `LoginPage`:
 
@@ -48,9 +49,10 @@ the page, Playwright MCP can generate `getByRole('button', { name: 'Submit' })`,
 and the Java test retries the click with `page.getByRole(...)`. Page objects do
 not define secondary selectors.
 
-## Flow Diagram
+## Flow Diagrams
 
-SVG version: [playwright-mcp-healing-flow.svg](playwright-mcp-healing-flow.svg)
+- Current AI-agent flow: [playwright-mcp-ai-agent-healing-flow.svg](playwright-mcp-ai-agent-healing-flow.svg)
+- Previous direct-MCP flow: [playwright-mcp-direct-healing-flow.svg](playwright-mcp-direct-healing-flow.svg)
 
 ```mermaid
 flowchart TD
@@ -58,9 +60,9 @@ flowchart TD
     B --> C[SelfHealingElement reads primary locator and hints]
     C --> D[Try primary locator]
     D -->|found and action passed| E[Continue test normally]
-    D -->|no match or Playwright error| F[Call official Playwright MCP]
-    F --> G[browser_find and browser_generate_locator]
-    G -->|found and action passed| H[Record healing event]
+    D -->|no match or Playwright error| F[Delegate to AiSelfHealingAgent]
+    F --> G[Agent calls Playwright MCP browser_find and browser_generate_locator]
+    G -->|locator validated and action passed| H[Record agent decision]
     H --> I[Scenario continues]
     G -->|no usable locator| L[Fail scenario with tried strategies and MCP result]
     I --> M[After hook]
@@ -88,31 +90,77 @@ Self-healing locator events
 
 Event 1
 Element: login submit button
-Healed by: Playwright MCP getByRole('button', { name: 'Submit' }) target=e42
+Healed by: AI agent selected Playwright MCP getByRole('button', { name: 'Submit' }) target=e42
 Skipped strategies:
 - button#submit (no matches)
+Agent reasoning:
+The agent used Playwright MCP browser_find to identify the element reference,
+then browser_generate_locator to create a stable Playwright locator.
 ```
 
 If multiple scenarios use the same healed element, each affected scenario gets
 its own report attachment. Scenarios with no healing do not get a
 `self-healing-report.txt` attachment.
 
-## Playwright MCP Locator Agent
+## AI Agent With Playwright MCP
 
 The healing path uses the official Playwright MCP server over Streamable HTTP:
 
 ```text
-Java test -> failed primary locator -> npx @playwright/mcp@latest -> browser_find -> browser_generate_locator -> Java retry
+Java test -> failed primary locator -> AiSelfHealingAgent -> Playwright MCP -> agent decision -> Java retry
 ```
 
-Recovery is handled through Playwright MCP:
+Recovery is managed by `AiSelfHealingAgent`:
 
-- Playwright MCP locator discovery: if the primary locator fails, MCP generates
-  a stable locator from the accessibility snapshot.
+- The agent receives the logical element name, intent hints, current page URL,
+  and failed primary locator.
+- The agent uses Playwright MCP `browser_find` to identify the target element in
+  the accessibility snapshot.
+- The agent uses Playwright MCP `browser_generate_locator` to generate a stable
+  locator expression.
+- The agent validates that the locator can be converted to Playwright Java.
+- `SelfHealingElement` retries the original action with the agent-selected
+  locator.
 
 If MCP cannot find a matching element or returns a locator expression that this
 Java framework cannot convert, the scenario fails with the tried primary locator
 and MCP context.
+
+## MCP With and Without an AI Agent
+
+Playwright MCP can be used without an agent:
+
+```text
+Locator fails -> Java calls Playwright MCP -> MCP generates locator -> Java retries action
+```
+
+That is enough when the element is still recognizable through normal browser
+signals such as role, accessible name, label, placeholder, text, id, or nearby
+snapshot context.
+
+This repo now uses an agent to own that recovery flow. The agent is useful
+because it centralizes the decisions around locator repair:
+
+- Understand changed UI intent, such as treating "Sign in" as the replacement
+  for an old "Submit" button.
+- Choose safely between multiple similar candidates on the page.
+- Decide when not to heal because the product flow changed or the page is wrong.
+- Explain whether the failure was locator drift, navigation timing, missing
+  data, access control, or a real application defect.
+- Update source code automatically, for example replacing the broken primary
+  locator in a page object and opening a pull request.
+
+In short:
+
+```text
+Playwright MCP = browser/page inspection and locator generation
+AI agent = healing workflow, validation, safety decisions, explanation, and optional code repair
+```
+
+The current project uses an in-framework AI self-healing agent that manages
+Playwright MCP and reports its decision. A model-backed agent can be added later
+if the framework should reason about larger UI intent changes or commit locator
+fixes back to the codebase.
 
 ## Local Usage
 
@@ -164,7 +212,7 @@ Run:
 Expected behavior:
 
 - The first submit locator has no matches.
-- The framework uses a generated `Playwright MCP ...` locator.
+- The framework uses a generated `AI agent selected Playwright MCP ...` locator.
 - The scenario passes.
 - `cucumber.html` shows `Self-healing locator events`.
 - The scenario has a `self-healing-report.txt` attachment.
@@ -220,9 +268,9 @@ starts the official MCP server through `npx` during the test run.
 2. `SelfHealingElement` tries the primary locator for every action.
 3. When the primary locator has no matches or throws a Playwright error, it is recorded
    as skipped.
-4. `McpLocatorAgent` calls the official Playwright MCP server and requests a
+4. `AiSelfHealingAgent` calls the official Playwright MCP server and requests a
    generated locator with `browser_generate_locator`.
-5. When a generated locator works, `HealingReport.recordAgentHealing(...)` stores
+5. When the agent-selected locator works, `HealingReport.recordAgentHealing(...)` stores
    the element name, healed strategy, and skipped strategies for the current
    thread.
 6. The Cucumber `@After` hook checks whether the current scenario has healing

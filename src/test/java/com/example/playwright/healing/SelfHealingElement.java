@@ -8,6 +8,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public final class SelfHealingElement {
+    private static final AiSelfHealingAgent SELF_HEALING_AGENT = new AiSelfHealingAgent();
+
     private final Page page;
     private final ElementDefinition definition;
 
@@ -54,28 +56,28 @@ public final class SelfHealingElement {
             skippedStrategies.add(primaryStrategy.name() + " (" + firstLine(e.getMessage()) + ")");
         }
 
-        List<LocatorStrategy> agentStrategies = McpLocatorAgent.recommend(page, definition);
-        for (LocatorStrategy strategy : agentStrategies) {
-            try {
-                Locator locator = strategy.resolve(page);
-                if (locator.count() > 0) {
-                    String beforeActionUrl = page.url();
-                    T result = applyAction(action, locator.first(), navigationCanMeanSuccess);
-                    HealingReport.recordAgentHealing(
-                            definition.logicalName(),
-                            strategy.name(),
-                            skippedStrategies,
-                            strategyNames(agentStrategies),
-                            beforeActionUrl + " -> " + page.url(),
-                            definition.hints()
-                    );
-                    return result;
-                }
-                skippedStrategies.add(strategy.name() + " (no matches)");
-            } catch (PlaywrightException e) {
-                lastFailure = e;
-                skippedStrategies.add(strategy.name() + " (" + firstLine(e.getMessage()) + ")");
+        HealingDecision decision = SELF_HEALING_AGENT.heal(page, definition);
+        LocatorStrategy agentStrategy = decision.strategy();
+        try {
+            Locator locator = agentStrategy.resolve(page);
+            if (locator.count() > 0) {
+                String beforeActionUrl = page.url();
+                T result = applyAction(action, locator.first(), navigationCanMeanSuccess);
+                HealingReport.recordAgentHealing(
+                        definition.logicalName(),
+                        agentStrategy.name(),
+                        skippedStrategies,
+                        decision.generatedCandidates(),
+                        beforeActionUrl + " -> " + page.url(),
+                        definition.hints(),
+                        decision.agentReasoning()
+                );
+                return result;
             }
+            skippedStrategies.add(agentStrategy.name() + " (no matches)");
+        } catch (PlaywrightException e) {
+            lastFailure = e;
+            skippedStrategies.add(agentStrategy.name() + " (" + firstLine(e.getMessage()) + ")");
         }
 
         throw new AssertionError("""
@@ -84,7 +86,7 @@ public final class SelfHealingElement {
                 Tried strategies:
                 %s
 
-                Playwright MCP did not produce a usable locator candidate.
+                AI self-healing agent did not produce a usable locator candidate.
                 """.formatted(definition.logicalName(), strategyNames()), lastFailure);
     }
 
@@ -118,14 +120,6 @@ public final class SelfHealingElement {
             builder.append("- MCP agent hint: ").append(hint).append(System.lineSeparator());
         }
         return builder.toString();
-    }
-
-    private List<String> strategyNames(List<LocatorStrategy> strategies) {
-        List<String> names = new ArrayList<>();
-        for (LocatorStrategy strategy : strategies) {
-            names.add(strategy.name());
-        }
-        return names;
     }
 
     @FunctionalInterface

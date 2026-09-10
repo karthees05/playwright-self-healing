@@ -25,6 +25,18 @@ public final class HealingReport {
             String pageUrl,
             List<String> hints
     ) {
+        recordAgentHealing(logicalName, usedStrategy, skippedStrategies, generatedCandidates, pageUrl, hints, "");
+    }
+
+    public static void recordAgentHealing(
+            String logicalName,
+            String usedStrategy,
+            List<String> skippedStrategies,
+            List<String> generatedCandidates,
+            String pageUrl,
+            List<String> hints,
+            String agentReasoning
+    ) {
         StringBuilder event = new StringBuilder()
                 .append("Element: ").append(logicalName).append(System.lineSeparator())
                 .append("Page URL: ").append(pageUrl).append(System.lineSeparator())
@@ -40,6 +52,11 @@ public final class HealingReport {
             for (String hint : hints) {
                 event.append("- ").append(hint).append(System.lineSeparator());
             }
+        }
+
+        if (agentReasoning != null && !agentReasoning.isBlank()) {
+            event.append("Agent reasoning:").append(System.lineSeparator())
+                    .append(agentReasoning).append(System.lineSeparator());
         }
 
         if (!generatedCandidates.isEmpty()) {
