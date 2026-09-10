@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" role="img" aria-labelledby="title desc">
+  <title id="title">Playwright MCP locator healing flow</title>
+  <desc id="desc">Flow showing how a Cucumber Playwright Java test recovers from an invalid locator by calling the official Playwright MCP server and retrying with the generated locator.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#334155"/>
+    </marker>
+    <style>
+      .bg { fill: #f8fafc; }
+      .lane { fill: #ffffff; stroke: #cbd5e1; stroke-width: 1.5; }
+      .box { fill: #f9fafb; stroke: #475569; stroke-width: 1.6; rx: 8; }
+      .mcp { fill: #ecfeff; stroke: #0e7490; stroke-width: 1.8; rx: 8; }
+      .pass { fill: #ecfdf5; stroke: #15803d; stroke-width: 1.8; rx: 8; }
+      .fail { fill: #fff7ed; stroke: #c2410c; stroke-width: 1.8; rx: 8; }
+      .title { font: 700 28px Arial, sans-serif; fill: #0f172a; }
+      .lane-title { font: 700 16px Arial, sans-serif; fill: #334155; }
+      .text { font: 600 15px Arial, sans-serif; fill: #0f172a; }
+      .small { font: 13px Arial, sans-serif; fill: #475569; }
+      .code { font: 13px Menlo, Consolas, monospace; fill: #334155; }
+      .arrow { stroke: #334155; stroke-width: 2; fill: none; marker-end: url(#arrow); }
+      .muted { stroke: #94a3b8; stroke-width: 1.5; stroke-dasharray: 6 5; fill: none; marker-end: url(#arrow); }
+    </style>
+  </defs>
+
+  <rect class="bg" width="1280" height="720"/>
+  <text x="60" y="52" class="title">Direct Playwright MCP Self-Healing Flow</text>
+  <text x="60" y="78" class="small">Invalid primary locator is healed by calling Playwright MCP directly; page objects do not define secondary locator chains.</text>
+
+  <rect x="45" y="110" width="360" height="545" class="lane"/>
+  <rect x="460" y="110" width="360" height="545" class="lane"/>
+  <rect x="875" y="110" width="360" height="545" class="lane"/>
+
+  <text x="65" y="140" class="lane-title">Test Code</text>
+  <text x="480" y="140" class="lane-title">Healing Layer</text>
+  <text x="895" y="140" class="lane-title">Official Playwright MCP</text>
+
+  <rect x="75" y="175" width="300" height="74" class="box"/>
+  <text x="95" y="205" class="text">Cucumber step runs</text>
+  <text x="95" y="228" class="small">User logs in with valid or invalid credentials</text>
+
+  <rect x="75" y="295" width="300" height="86" class="box"/>
+  <text x="95" y="325" class="text">Page object calls element</text>
+  <text x="95" y="348" class="code">element(SUBMIT).click()</text>
+  <text x="95" y="368" class="small">Only primary locator plus intent hint</text>
+
+  <rect x="490" y="295" width="300" height="86" class="fail"/>
+  <text x="510" y="325" class="text">Primary locator fails</text>
+  <text x="510" y="348" class="code">button#submit-broken-for-healing-demo</text>
+  <text x="510" y="368" class="small">Recorded as no matches</text>
+
+  <rect x="490" y="425" width="300" height="104" class="mcp"/>
+  <text x="510" y="455" class="text">Healing layer requests MCP locator</text>
+  <text x="510" y="478" class="small">Starts PlaywrightMcpClient if needed</text>
+  <text x="510" y="500" class="code">npx -y @playwright/mcp@latest</text>
+
+  <rect x="905" y="195" width="300" height="108" class="mcp"/>
+  <text x="925" y="225" class="text">MCP server opens same URL</text>
+  <text x="925" y="248" class="code">browser_navigate</text>
+  <text x="925" y="270" class="small">Builds accessibility snapshot</text>
+
+  <rect x="905" y="345" width="300" height="108" class="mcp"/>
+  <text x="925" y="375" class="text">MCP finds target ref</text>
+  <text x="925" y="398" class="code">browser_find("Submit")</text>
+  <text x="925" y="420" class="small">Example target: e42</text>
+
+  <rect x="905" y="495" width="300" height="108" class="mcp"/>
+  <text x="925" y="525" class="text">MCP generates locator</text>
+  <text x="925" y="548" class="code">browser_generate_locator</text>
+  <text x="925" y="570" class="code">getByRole('button', { name: 'Submit' })</text>
+
+  <rect x="490" y="565" width="300" height="74" class="pass"/>
+  <text x="510" y="595" class="text">Java retries with MCP locator</text>
+  <text x="510" y="618" class="small">Locator expression is converted to Playwright Java</text>
+
+  <rect x="75" y="515" width="300" height="86" class="pass"/>
+  <text x="95" y="545" class="text">Scenario passes</text>
+  <text x="95" y="568" class="small">Cucumber attaches self-healing report</text>
+  <text x="95" y="588" class="code">Healed by: Playwright MCP ...</text>
+
+  <path class="arrow" d="M 225 249 L 225 295"/>
+  <path class="arrow" d="M 375 338 L 490 338"/>
+  <path class="arrow" d="M 640 381 L 640 425"/>
+  <path class="arrow" d="M 790 477 C 850 477 850 249 905 249"/>
+  <path class="arrow" d="M 1055 303 L 1055 345"/>
+  <path class="arrow" d="M 1055 453 L 1055 495"/>
+  <path class="arrow" d="M 905 549 C 845 549 845 602 790 602"/>
+  <path class="arrow" d="M 490 602 C 430 602 430 558 375 558"/>
+
+  <path class="muted" d="M 640 529 L 640 565"/>
+  <text x="650" y="552" class="small">generated locator returned</text>
+
+  <rect x="60" y="670" width="1160" height="1.5" fill="#cbd5e1"/>
+  <text x="60" y="698" class="small">Report output: failed primary locator, URL before/after, MCP target ref, generated locator, scenario pass status.</text>
+</svg>
