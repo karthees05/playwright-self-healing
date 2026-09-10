@@ -1,30 +1,25 @@
 package com.example.playwright.pages;
 
-import com.example.playwright.healing.AiHealingAdvisor;
 import com.example.playwright.healing.ElementDefinition;
 import com.example.playwright.healing.LocatorStrategy;
 import com.microsoft.playwright.Page;
-import com.microsoft.playwright.options.AriaRole;
-
-import java.util.List;
 
 public final class SecurePage extends BasePage {
-    private static final ElementDefinition SUCCESS_MESSAGE = new ElementDefinition("secure area success message", List.of(
+    private static final ElementDefinition SUCCESS_MESSAGE = new ElementDefinition(
+            "secure area success message",
             new LocatorStrategy("css .post-title", page -> page.locator(".post-title")),
-            new LocatorStrategy("heading Logged In Successfully", page -> page.getByRole(AriaRole.HEADING,
-                    new Page.GetByRoleOptions().setName("Logged In Successfully"))),
-            new LocatorStrategy("text Logged In Successfully", page -> page.getByText("Logged In Successfully"))
-    ));
+            "Logged In Successfully"
+    );
 
-    private static final ElementDefinition LOGOUT = new ElementDefinition("secure area logout button", List.of(
+    private static final ElementDefinition LOGOUT = new ElementDefinition(
+            "secure area logout button",
             new LocatorStrategy("text Log out", page -> page.getByText("Log out")),
-            new LocatorStrategy("role link Log out", page -> page.getByRole(AriaRole.LINK,
-                    new Page.GetByRoleOptions().setName("Log out"))),
-            new LocatorStrategy("href practice-test-login", page -> page.locator("a[href*='practice-test-login']"))
-    ));
+            "Log out",
+            "Logout"
+    );
 
-    public SecurePage(Page page, AiHealingAdvisor aiHealingAdvisor) {
-        super(page, aiHealingAdvisor);
+    public SecurePage(Page page) {
+        super(page);
     }
 
     public boolean isDisplayed() {

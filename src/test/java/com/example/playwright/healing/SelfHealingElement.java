@@ -10,48 +10,65 @@ import java.util.List;
 public final class SelfHealingElement {
     private final Page page;
     private final ElementDefinition definition;
-    private final AiHealingAdvisor aiHealingAdvisor;
 
-    public SelfHealingElement(Page page, ElementDefinition definition, AiHealingAdvisor aiHealingAdvisor) {
+    public SelfHealingElement(Page page, ElementDefinition definition) {
         this.page = page;
         this.definition = definition;
-        this.aiHealingAdvisor = aiHealingAdvisor;
     }
 
     public void click() {
-        withHealingVoid(Locator::click);
+        withHealingVoid(Locator::click, true);
     }
 
     public void fill(String value) {
-        withHealingVoid(locator -> locator.fill(value));
+        withHealingVoid(locator -> locator.fill(value), false);
     }
 
     public String textContent() {
-        return withHealing(Locator::textContent);
+        return withHealing(Locator::textContent, false);
     }
 
     public boolean isVisible() {
-        return Boolean.TRUE.equals(withHealing(Locator::isVisible));
+        return Boolean.TRUE.equals(withHealing(Locator::isVisible, false));
     }
 
-    private void withHealingVoid(LocatorVoidAction action) {
+    private void withHealingVoid(LocatorVoidAction action, boolean navigationCanMeanSuccess) {
         withHealing(locator -> {
             action.apply(locator);
             return null;
-        });
+        }, navigationCanMeanSuccess);
     }
 
-    private <T> T withHealing(LocatorAction<T> action) {
+    private <T> T withHealing(LocatorAction<T> action, boolean navigationCanMeanSuccess) {
         PlaywrightException lastFailure = null;
         List<String> skippedStrategies = new ArrayList<>();
-        for (LocatorStrategy strategy : definition.strategies()) {
+        LocatorStrategy primaryStrategy = definition.primaryStrategy();
+        try {
+            Locator locator = primaryStrategy.resolve(page);
+            if (locator.count() > 0) {
+                return action.apply(locator.first());
+            }
+            skippedStrategies.add(primaryStrategy.name() + " (no matches)");
+        } catch (PlaywrightException e) {
+            lastFailure = e;
+            skippedStrategies.add(primaryStrategy.name() + " (" + firstLine(e.getMessage()) + ")");
+        }
+
+        List<LocatorStrategy> agentStrategies = McpLocatorAgent.recommend(page, definition);
+        for (LocatorStrategy strategy : agentStrategies) {
             try {
                 Locator locator = strategy.resolve(page);
                 if (locator.count() > 0) {
-                    T result = action.apply(locator.first());
-                    if (!skippedStrategies.isEmpty()) {
-                        HealingReport.recordFallback(definition.logicalName(), strategy.name(), skippedStrategies);
-                    }
+                    String beforeActionUrl = page.url();
+                    T result = applyAction(action, locator.first(), navigationCanMeanSuccess);
+                    HealingReport.recordAgentHealing(
+                            definition.logicalName(),
+                            strategy.name(),
+                            skippedStrategies,
+                            strategyNames(agentStrategies),
+                            beforeActionUrl + " -> " + page.url(),
+                            definition.hints()
+                    );
                     return result;
                 }
                 skippedStrategies.add(strategy.name() + " (no matches)");
@@ -61,17 +78,30 @@ public final class SelfHealingElement {
             }
         }
 
-        McpPageSnapshot snapshot = McpPageSnapshot.capture(page);
-        String advice = aiHealingAdvisor.advise(definition.logicalName(), snapshot);
         throw new AssertionError("""
                 Unable to locate self-healing element: %s
 
                 Tried strategies:
                 %s
 
-                AI/MCP healing advice:
-                %s
-                """.formatted(definition.logicalName(), strategyNames(), advice), lastFailure);
+                Playwright MCP did not produce a usable locator candidate.
+                """.formatted(definition.logicalName(), strategyNames()), lastFailure);
+    }
+
+    private <T> T applyAction(LocatorAction<T> action, Locator locator, boolean navigationCanMeanSuccess) {
+        try {
+            return action.apply(locator);
+        } catch (PlaywrightException e) {
+            if (navigationCanMeanSuccess && isNavigationDuringAction(e)) {
+                return null;
+            }
+            throw e;
+        }
+    }
+
+    private boolean isNavigationDuringAction(PlaywrightException e) {
+        String message = e.getMessage();
+        return message != null && message.contains("Execution context was destroyed");
     }
 
     private String firstLine(String message) {
@@ -83,10 +113,19 @@ public final class SelfHealingElement {
 
     private String strategyNames() {
         StringBuilder builder = new StringBuilder();
-        for (LocatorStrategy strategy : definition.strategies()) {
-            builder.append("- ").append(strategy.name()).append(System.lineSeparator());
+        builder.append("- ").append(definition.primaryStrategy().name()).append(System.lineSeparator());
+        for (String hint : definition.hints()) {
+            builder.append("- MCP agent hint: ").append(hint).append(System.lineSeparator());
         }
         return builder.toString();
+    }
+
+    private List<String> strategyNames(List<LocatorStrategy> strategies) {
+        List<String> names = new ArrayList<>();
+        for (LocatorStrategy strategy : strategies) {
+            names.add(strategy.name());
+        }
+        return names;
     }
 
     @FunctionalInterface

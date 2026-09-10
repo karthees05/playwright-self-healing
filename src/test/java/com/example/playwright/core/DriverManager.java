@@ -22,6 +22,7 @@ public final class DriverManager {
                 .setViewportSize(1440, 900));
         Page page = context.newPage();
         page.setDefaultTimeout(TestConfig.timeoutMillis());
+        page.setDefaultNavigationTimeout(TestConfig.timeoutMillis());
 
         PLAYWRIGHT.set(playwright);
         BROWSER.set(browser);

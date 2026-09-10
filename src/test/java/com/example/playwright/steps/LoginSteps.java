@@ -1,7 +1,6 @@
 package com.example.playwright.steps;
 
 import com.example.playwright.core.DriverManager;
-import com.example.playwright.healing.AiHealingAdvisor;
 import com.example.playwright.pages.LoginPage;
 import com.example.playwright.pages.SecurePage;
 import io.cucumber.java.en.Given;
@@ -11,8 +10,6 @@ import io.cucumber.java.en.When;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public final class LoginSteps {
-    private final AiHealingAdvisor aiHealingAdvisor = new AiHealingAdvisor();
-
     @Given("the user opens the practice login page")
     public void theUserOpensThePracticeLoginPage() {
         loginPage().open();
@@ -41,10 +38,10 @@ public final class LoginSteps {
     }
 
     private LoginPage loginPage() {
-        return new LoginPage(DriverManager.page(), aiHealingAdvisor);
+        return new LoginPage(DriverManager.page());
     }
 
     private SecurePage securePage() {
-        return new SecurePage(DriverManager.page(), aiHealingAdvisor);
+        return new SecurePage(DriverManager.page());
     }
 }

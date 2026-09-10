@@ -18,20 +18,12 @@ public final class TestConfig {
         return Integer.parseInt(get("PW_TIMEOUT_MS", "10000"));
     }
 
-    public static boolean aiHealingEnabled() {
-        return Boolean.parseBoolean(get("AI_HEALING_ENABLED", "false"));
+    public static String playwrightMcpCommand() {
+        return get("PLAYWRIGHT_MCP_COMMAND", "npx");
     }
 
-    public static String aiEndpoint() {
-        return get("AI_ENDPOINT", "https://api.openai.com/v1/chat/completions");
-    }
-
-    public static String aiModel() {
-        return get("OPENAI_MODEL", "gpt-4.1-mini");
-    }
-
-    public static String openAiApiKey() {
-        return System.getenv("OPENAI_API_KEY");
+    public static String playwrightMcpPackage() {
+        return get("PLAYWRIGHT_MCP_PACKAGE", "@playwright/mcp@latest");
     }
 
     public static Path evidenceDir() {

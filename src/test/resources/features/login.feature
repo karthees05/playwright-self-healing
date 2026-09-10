@@ -1,8 +1,7 @@
 Feature: Practice Test Automation login
 
   The framework uses a public demo login page to show Playwright, Java, Gradle,
-  Cucumber, page objects, deterministic self-healing locators, and optional AI
-  healing advice.
+  Cucumber, page objects, and Playwright MCP self-healing locators.
 
   Background:
     Given the user opens the practice login page

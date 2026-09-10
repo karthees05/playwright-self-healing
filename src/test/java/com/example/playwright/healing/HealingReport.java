@@ -14,13 +14,39 @@ public final class HealingReport {
     }
 
     public static void recordFallback(String logicalName, String usedStrategy, List<String> skippedStrategies) {
+        recordAgentHealing(logicalName, usedStrategy, skippedStrategies, List.of(), "", List.of());
+    }
+
+    public static void recordAgentHealing(
+            String logicalName,
+            String usedStrategy,
+            List<String> skippedStrategies,
+            List<String> generatedCandidates,
+            String pageUrl,
+            List<String> hints
+    ) {
         StringBuilder event = new StringBuilder()
                 .append("Element: ").append(logicalName).append(System.lineSeparator())
+                .append("Page URL: ").append(pageUrl).append(System.lineSeparator())
                 .append("Healed by: ").append(usedStrategy).append(System.lineSeparator())
                 .append("Skipped strategies:").append(System.lineSeparator());
 
         for (String skippedStrategy : skippedStrategies) {
             event.append("- ").append(skippedStrategy).append(System.lineSeparator());
+        }
+
+        if (!hints.isEmpty()) {
+            event.append("MCP agent hints:").append(System.lineSeparator());
+            for (String hint : hints) {
+                event.append("- ").append(hint).append(System.lineSeparator());
+            }
+        }
+
+        if (!generatedCandidates.isEmpty()) {
+            event.append("Generated MCP candidates:").append(System.lineSeparator());
+            for (String generatedCandidate : generatedCandidates) {
+                event.append("- ").append(generatedCandidate).append(System.lineSeparator());
+            }
         }
 
         EVENTS.get().add(event.toString());
