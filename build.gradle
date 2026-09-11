@@ -17,8 +17,30 @@ dependencies {
     testImplementation 'io.cucumber:cucumber-java:7.18.1'
     testImplementation 'io.cucumber:cucumber-junit-platform-engine:7.18.1'
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.10.2'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.10.2'
     testImplementation 'org.junit.platform:junit-platform-suite:1.10.2'
     testImplementation 'org.slf4j:slf4j-simple:2.0.13'
+}
+
+tasks.register('agentTest', Test) {
+    description = 'Runs credential-free LLM agent contract tests.'
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    include '**/*AgentTest.class', '**/*ModelTest.class'
+    useJUnitPlatform { excludeTags 'browser' }
+}
+
+tasks.register('agentBrowserTest', Test) {
+    description = 'Verifies real Playwright MCP with scripted model decisions, without provider credentials.'
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    include '**/LlmBrowserAgentTest.class'
+}
+
+tasks.register('installCiBrowsers', JavaExec) {
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.microsoft.playwright.CLI'
+    args 'install', '--with-deps', 'chromium'
 }
 
 tasks.withType(Test).configureEach {

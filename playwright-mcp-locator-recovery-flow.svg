@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" role="img" aria-labelledby="title desc">
-  <title id="title">MCP-based locator recovery flow</title>
+  <title id="title">Historical MCP-based locator recovery without an LLM</title>
   <desc id="desc">Flow showing how a Cucumber Playwright Java test delegates an invalid locator failure to a Java recovery component that uses the official Playwright MCP server, validates the generated locator, retries the action, and writes a report.</desc>
   <defs>
     <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
@@ -24,8 +24,8 @@
   </defs>
 
   <rect class="bg" width="1280" height="720"/>
-  <text x="60" y="52" class="title">MCP-based Locator Recovery Flow</text>
-  <text x="60" y="78" class="small">Invalid primary locator is handled by Java recovery logic at runtime; page objects do not define secondary locator chains.</text>
+  <text x="60" y="52" class="title">Historical: Java-managed MCP Locator Recovery</text>
+  <text x="60" y="78" class="small">Previous branch: fixed Java tool sequence, no LLM or model credentials. Replaced by LlmHealingAgent in the current branch.</text>
 
   <rect x="45" y="110" width="345" height="545" class="lane"/>
   <rect x="425" y="110" width="405" height="545" class="lane"/>
@@ -55,7 +55,7 @@
   <text x="475" y="380" class="small">Starts PlaywrightMcpClient when needed</text>
 
   <rect x="895" y="185" width="300" height="96" class="mcp"/>
-  <text x="915" y="215" class="text">Open same page in MCP browser</text>
+  <text x="915" y="215" class="text">Open URL in separate MCP browser</text>
   <text x="915" y="238" class="code">browser_navigate</text>
   <text x="915" y="260" class="small">MCP builds accessibility snapshot</text>
 
@@ -76,7 +76,7 @@
   <text x="475" y="552" class="small">Returns locator strategy and recovery details</text>
 
   <rect x="75" y="515" width="285" height="86" class="pass"/>
-  <text x="95" y="545" class="text">Retry passes and report is attached</text>
+  <text x="95" y="545" class="text">Successful retry is reported</text>
   <text x="95" y="568" class="small">Cucumber logs recovery details</text>
   <text x="95" y="588" class="code">Recovered by: MCP-based recovery...</text>
 
@@ -93,5 +93,5 @@
   <text x="638" y="437" class="small">MCP result returned to Java</text>
 
   <rect x="60" y="670" width="1160" height="1.5" fill="#cbd5e1"/>
-  <text x="60" y="698" class="small">Report output: failed primary locator, URL before/after, recovery details, MCP target ref, generated locator, scenario pass status.</text>
+  <text x="60" y="698" class="small">Historical behavior: first matching locator retried; no confidence scoring or model investigation. Scenario assertions still determine pass/fail.</text>
 </svg>

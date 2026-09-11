@@ -1,0 +1,64 @@
+name: Playwright LLM Agent Tests
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+      - run: ./gradlew agentTest
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: llm-agent-contract-reports
+          path: build/reports/tests/agentTest
+
+  live-agent:
+    if: github.event_name != 'pull_request'
+    needs: contracts
+    environment: llm-healing
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+      - run: ./gradlew installCiBrowsers
+      - name: Run live LLM repair scenarios
+        env:
+          HEADLESS: 'true'
+          PW_TIMEOUT_MS: '30000'
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_MODEL: ${{ vars.OPENAI_MODEL }}
+        run: |
+          test -n "$OPENAI_API_KEY" || { echo 'Missing OPENAI_API_KEY secret'; exit 1; }
+          test -n "$OPENAI_MODEL" || { echo 'Missing OPENAI_MODEL variable'; exit 1; }
+          ./gradlew clean build
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-llm-agent-reports
+          path: |
+            build/reports/cucumber
+            build/reports/tests/test
+            build/evidence

@@ -15,7 +15,6 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
@@ -23,7 +22,6 @@ import java.util.regex.Pattern;
 
 public final class PlaywrightMcpClient implements AutoCloseable {
     private static final ObjectMapper JSON = new ObjectMapper();
-    private static final Pattern REF_PATTERN = Pattern.compile("\\[ref=([^\\]]+)]");
     private static final Pattern LOCATOR_RESULT_PATTERN = Pattern.compile("(?m)^### Result\\R(.+?)\\s*$", Pattern.DOTALL);
 
     private final HttpClient httpClient = HttpClient.newBuilder()
@@ -34,12 +32,14 @@ public final class PlaywrightMcpClient implements AutoCloseable {
     private final URI endpoint;
     private final String sessionId;
 
+    /** Stores the child process, HTTP endpoint, and MCP session identifier. */
     private PlaywrightMcpClient(Process process, URI endpoint, String sessionId) {
         this.process = process;
         this.endpoint = endpoint;
         this.sessionId = sessionId;
     }
 
+    /** Launches and initializes the local MCP server and registers shutdown cleanup. */
     public static PlaywrightMcpClient start() {
         int port = availablePort();
         Process process = startServer(port);
@@ -49,89 +49,14 @@ public final class PlaywrightMcpClient implements AutoCloseable {
         return client;
     }
 
-    public Optional<McpLocatorRecommendation> generateLocator(String pageUrl, ElementDefinition definition) {
-        try {
-            callTool("browser_navigate", """
-                    {"url":%s}
-                    """.formatted(jsonString(pageUrl)));
-
-            String targetRef = findTargetRef(definition).orElse("");
-            if (targetRef.isBlank()) {
-                return Optional.empty();
-            }
-
-            String locatorOutput = callTool("browser_generate_locator", """
-                    {"target":%s,"element":%s}
-                    """.formatted(jsonString(targetRef), jsonString(definition.logicalName())));
-            String locatorExpression = extractLocator(locatorOutput);
-            if (locatorExpression.isBlank()) {
-                return Optional.empty();
-            }
-
-            return Optional.of(new McpLocatorRecommendation(
-                    targetRef,
-                    locatorExpression,
-                    locatorOutput,
-                    "Official Playwright MCP browser_generate_locator"
-            ));
-        } catch (IOException e) {
-            return Optional.empty();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            return Optional.empty();
-        }
-    }
-
-    private Optional<String> findTargetRef(ElementDefinition definition) throws IOException, InterruptedException {
-        List<String> searchTerms = new ArrayList<>();
-        searchTerms.addAll(definition.hints());
-        searchTerms.add(definition.logicalName());
-
-        for (String term : searchTerms) {
-            if (term == null || term.isBlank()) {
-                continue;
-            }
-            String result = callTool("browser_find", """
-                    {"text":%s}
-                    """.formatted(jsonString(term)));
-            Optional<String> ref = bestRef(result, definition);
-            if (ref.isPresent()) {
-                return ref;
-            }
-        }
-        return Optional.empty();
-    }
-
-    private Optional<String> bestRef(String browserFindOutput, ElementDefinition definition) {
-        String lowerName = definition.logicalName().toLowerCase();
-        for (String line : browserFindOutput.lines().toList()) {
-            String lowerLine = line.toLowerCase();
-            boolean likelyTarget = lowerLine.contains("button")
-                    || lowerLine.contains("textbox")
-                    || lowerLine.contains("link")
-                    || lowerLine.contains("heading")
-                    || lowerLine.contains("text:")
-                    || lowerLine.contains("checkbox")
-                    || lowerLine.contains("combobox");
-            boolean matchesIntent = definition.hints().stream()
-                    .anyMatch(hint -> !hint.isBlank() && lowerLine.contains(hint.toLowerCase()))
-                    || lowerLine.contains(lowerName);
-            if (likelyTarget && matchesIntent) {
-                Matcher matcher = REF_PATTERN.matcher(line);
-                if (matcher.find()) {
-                    return Optional.of(matcher.group(1));
-                }
-            }
-        }
-        return Optional.empty();
-    }
-
-    private String callTool(String name, String argumentsJson) throws IOException, InterruptedException {
+    /** Calls an MCP tool with JSON arguments and extracts its text observation. */
+    String callTool(String name, String argumentsJson) throws IOException, InterruptedException {
         return textContent(rpc("""
                 {"jsonrpc":"2.0","id":%d,"method":"tools/call","params":{"name":%s,"arguments":%s}}
                 """.formatted(ids.incrementAndGet(), jsonString(name), argumentsJson)));
     }
 
+    /** Sends a session-bound JSON-RPC request and rejects HTTP or MCP errors. */
     private JsonNode rpc(String body) throws IOException, InterruptedException {
         HttpRequest request = HttpRequest.newBuilder(endpoint)
                 .timeout(Duration.ofSeconds(60))
@@ -140,9 +65,16 @@ public final class PlaywrightMcpClient implements AutoCloseable {
                 .header("mcp-session-id", sessionId)
                 .POST(HttpRequest.BodyPublishers.ofString(body))
                 .build();
-        return parseSseJson(httpClient.send(request, HttpResponse.BodyHandlers.ofString()).body());
+        var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() != 200) throw new IOException("MCP HTTP " + response.statusCode());
+        JsonNode result = parseSseJson(response.body());
+        if (result.has("error") || result.path("result").path("isError").asBoolean()) {
+            throw new IOException("MCP tool request failed");
+        }
+        return result;
     }
 
+    /** Retries the MCP handshake until startup succeeds or its attempt budget expires. */
     private static PlaywrightMcpClient initialize(Process process, URI endpoint) {
         HttpClient httpClient = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(2))
@@ -175,6 +107,7 @@ public final class PlaywrightMcpClient implements AutoCloseable {
         throw new IllegalStateException("Playwright MCP server did not become ready at " + endpoint);
     }
 
+    /** Notifies MCP that the client has completed initialization. */
     private static void notifyInitialized(HttpClient httpClient, URI endpoint, String sessionId) throws IOException, InterruptedException {
         HttpRequest request = HttpRequest.newBuilder(endpoint)
                 .timeout(Duration.ofSeconds(5))
@@ -186,11 +119,12 @@ public final class PlaywrightMcpClient implements AutoCloseable {
         httpClient.send(request, HttpResponse.BodyHandlers.discarding());
     }
 
+    /** Launches MCP without the provider key and drains child output to avoid blocking. */
     private static Process startServer(int port) {
         try {
-            Process process = new ProcessBuilder(serverCommand(port))
-                    .redirectErrorStream(true)
-                    .start();
+            ProcessBuilder builder = new ProcessBuilder(serverCommand(port)).redirectErrorStream(true);
+            builder.environment().remove("OPENAI_API_KEY");
+            Process process = builder.start();
             Thread outputDrainer = new Thread(() -> drain(process), "playwright-mcp-output");
             outputDrainer.setDaemon(true);
             outputDrainer.start();
@@ -200,6 +134,7 @@ public final class PlaywrightMcpClient implements AutoCloseable {
         }
     }
 
+    /** Builds the headless MCP launch command with testing capabilities and the selected port. */
     private static List<String> serverCommand(int port) {
         List<String> command = new ArrayList<>();
         command.add(TestConfig.playwrightMcpCommand());
@@ -214,6 +149,7 @@ public final class PlaywrightMcpClient implements AutoCloseable {
         return command;
     }
 
+    /** Consumes child output so a full pipe cannot stall the server. */
     private static void drain(Process process) {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
             while (reader.readLine() != null) {
@@ -223,6 +159,7 @@ public final class PlaywrightMcpClient implements AutoCloseable {
         }
     }
 
+    /** Obtains an available local TCP port for the MCP server. */
     private static int availablePort() {
         try (ServerSocket socket = new ServerSocket(0)) {
             return socket.getLocalPort();
@@ -231,6 +168,7 @@ public final class PlaywrightMcpClient implements AutoCloseable {
         }
     }
 
+    /** Returns the first result text block, or an empty string when no content exists. */
     private static String textContent(JsonNode response) {
         JsonNode content = response.path("result").path("content");
         if (content.isArray() && !content.isEmpty()) {
@@ -239,6 +177,7 @@ public final class PlaywrightMcpClient implements AutoCloseable {
         return "";
     }
 
+    /** Extracts JSON from SSE data lines or parses a plain JSON response. */
     private static JsonNode parseSseJson(String body) throws IOException {
         StringBuilder data = new StringBuilder();
         for (String line : body.lines().toList()) {
@@ -250,7 +189,8 @@ public final class PlaywrightMcpClient implements AutoCloseable {
         return JSON.readTree(json);
     }
 
-    private static String extractLocator(String locatorOutput) {
+    /** Extracts the MCP Result section, falling back to trimmed output. */
+    static String extractLocator(String locatorOutput) {
         Matcher matcher = LOCATOR_RESULT_PATTERN.matcher(locatorOutput);
         if (matcher.find()) {
             return matcher.group(1).trim();
@@ -258,6 +198,7 @@ public final class PlaywrightMcpClient implements AutoCloseable {
         return locatorOutput.trim();
     }
 
+    /** Encodes a string safely for inclusion in a JSON-RPC message. */
     private static String jsonString(String value) {
         try {
             return JSON.writeValueAsString(value);
@@ -266,6 +207,7 @@ public final class PlaywrightMcpClient implements AutoCloseable {
         }
     }
 
+    /** Waits briefly between startup attempts while preserving thread interruption. */
     private static void sleep() {
         try {
             TimeUnit.MILLISECONDS.sleep(500);
@@ -274,6 +216,7 @@ public final class PlaywrightMcpClient implements AutoCloseable {
         }
     }
 
+    /** Stops MCP and forces termination if graceful shutdown does not finish promptly. */
     @Override
     public void close() {
         process.destroy();

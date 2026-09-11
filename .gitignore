@@ -10,3 +10,6 @@ test-results/
 traces/
 screenshots/
 .playwright-mcp/
+.env
+.env.*
+!.env.example

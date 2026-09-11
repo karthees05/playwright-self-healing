@@ -18,14 +18,17 @@ public final class SecurePage extends BasePage {
             "Logout"
     );
 
+    /** Binds secure-area interactions to the supplied page. */
     public SecurePage(Page page) {
         super(page);
     }
 
+    /** Checks visibility of the successful-login heading. */
     public boolean isDisplayed() {
         return element(SUCCESS_MESSAGE).isVisible();
     }
 
+    /** Clicks the logout element through the recovery wrapper. */
     public void logout() {
         element(LOGOUT).click();
     }

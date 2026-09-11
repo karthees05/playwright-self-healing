@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="820" viewBox="0 0 1280 820" role="img" aria-labelledby="title desc">
+  <title id="title">Current LLM agent: local and GitHub Actions execution</title>
+  <desc id="desc">Local Gradle and trusted CI runs host the same Java LLM agent. OpenAI chooses inspection steps, Playwright MCP provides browser observations, Java validates proposed locators and retries once. Pull requests run credential-free contracts. Reports distinguish scripted verification from live model tests.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="#444"/></marker>
+    <style>text{font:16px Arial,sans-serif;fill:#252525}.title{font-size:28px;font-weight:bold}.label{font-weight:bold}.small{font-size:14px}.box{fill:#fff;stroke:#777;stroke-width:1.5;rx:6}.model{fill:#e9f5ed;stroke:#33834f}.mcp{fill:#e8f4fa;stroke:#287c9a}.arrow{fill:none;stroke:#555;stroke-width:2;marker-end:url(#arrow)}</style>
+  </defs>
+  <rect width="1280" height="820" fill="#f8f9fa"/>
+  <text x="40" y="48" class="title">LLM Healing: Local Development and GitHub Actions</text>
+  <text x="40" y="78">Current branch architecture. The agent runs inside Java; no IDE agent session is required in CI.</text>
+
+  <rect x="40" y="120" width="360" height="120" class="box"/>
+  <text x="60" y="150" class="label">Local live run</text>
+  <text x="60" y="178">./gradlew clean build</text>
+  <text x="60" y="203" class="small">OPENAI_API_KEY + OPENAI_MODEL</text>
+  <text x="60" y="226" class="small">Java 21, Node / npx, Playwright browsers</text>
+
+  <rect x="460" y="120" width="360" height="120" class="box"/>
+  <text x="480" y="150" class="label">Trusted CI live run</text>
+  <text x="480" y="178">Push or manual dispatch; after contracts</text>
+  <text x="480" y="203" class="small">GitHub environment: llm-healing</text>
+  <text x="480" y="226" class="small">Secret: API key; variable: model ID</text>
+
+  <rect x="880" y="120" width="360" height="120" class="box"/>
+  <text x="900" y="150" class="label">Pull-request verification</text>
+  <text x="900" y="178">./gradlew agentTest</text>
+  <text x="900" y="203" class="small">Scripted decisions + mock provider HTTP</text>
+  <text x="900" y="226" class="small">No model secret; no live-model scenarios</text>
+
+  <path d="M220 240 V275 H440 V310" class="arrow"/>
+  <path d="M640 240 V310" class="arrow"/>
+  <rect x="300" y="310" width="520" height="110" class="box model"/>
+  <text x="320" y="340" class="label">LlmHealingAgent: zero-match locator triggers investigation</text>
+  <text x="320" y="370" class="small">Model chooses snapshot / find / generate / propose / abort</text>
+  <text x="320" y="396" class="small">Eight-step budget; provider errors stop repair</text>
+
+  <rect x="40" y="475" width="360" height="110" class="box model"/>
+  <text x="60" y="506" class="label">OpenAiRepairModel</text>
+  <text x="60" y="535" class="small">Authenticated Responses API; strict schema</text>
+  <text x="60" y="561" class="small">60-second request timeout; store: false</text>
+  <path d="M300 395 H220 V475" class="arrow"/>
+  <path d="M170 475 V365 H300" class="arrow"/>
+
+  <rect x="460" y="475" width="360" height="110" class="box mcp"/>
+  <text x="480" y="506" class="label">Official Playwright MCP server</text>
+  <text x="480" y="535" class="small">Java dispatches allowlisted inspection tools</text>
+  <text x="480" y="561" class="small">Separate browser; observations return to model</text>
+  <path d="M620 420 V475" class="arrow"/>
+  <path d="M760 475 V420" class="arrow"/>
+
+  <rect x="880" y="310" width="360" height="275" class="box"/>
+  <text x="900" y="342" class="label">Validation and scenario execution</text>
+  <text x="900" y="374" class="small">Accept only MCP-generated expressions</text>
+  <text x="900" y="402" class="small">One visible, enabled match in test browser</text>
+  <text x="900" y="430" class="small">Reject: return evidence to next model turn</text>
+  <text x="900" y="458" class="small">Accept: record proposal, retry action once</text>
+  <text x="900" y="486" class="small">Original business assertions stay unchanged</text>
+  <text x="900" y="514" class="small">Action errors and assertions are not healed</text>
+  <text x="900" y="550" class="small">Abort / limit / error: fail with trace</text>
+  <path d="M820 350 H880" class="arrow"/>
+  <path d="M880 410 H850 V445 H560 V420" class="arrow"/>
+
+  <rect x="300" y="655" width="940" height="110" class="box"/>
+  <text x="320" y="685" class="label">Evidence and reports</text>
+  <text x="320" y="714" class="small">Live: Cucumber HTML / JSON + llm-agent-repair-report.txt + final scenario status + failure evidence</text>
+  <text x="320" y="742" class="small">Verification: agentTest contracts; agentBrowserTest uses real MCP with scripted model decisions, not a live LLM</text>
+  <path d="M1060 585 V655" class="arrow"/>
+  <text x="40" y="800" class="small">Runtime repair only. No automatic source edits or PR creation. Matching an element is not proof that the model selected the intended target.</text>
+</svg>

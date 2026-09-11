@@ -8,40 +8,47 @@ import java.util.ArrayList;
 import java.util.List;
 
 public final class SelfHealingElement {
-    private static final McpLocatorRecovery LOCATOR_RECOVERY = new McpLocatorRecovery();
+    private static final LlmHealingAgent LOCATOR_RECOVERY = new LlmHealingAgent();
 
     private final Page page;
     private final ElementDefinition definition;
 
+    /** Associates the primary locator and intent hints with a browser page. */
     public SelfHealingElement(Page page, ElementDefinition definition) {
         this.page = page;
         this.definition = definition;
     }
 
+    /** Clicks the element, investigating recovery only when the primary locator has no matches. */
     public void click() {
-        withHealingVoid(Locator::click, true);
+        withHealingVoid(Locator::click);
     }
 
+    /** Fills the element with the supplied value, using recovery for a missing primary locator. */
     public void fill(String value) {
-        withHealingVoid(locator -> locator.fill(value), false);
+        withHealingVoid(locator -> locator.fill(value));
     }
 
+    /** Reads element text through the primary or validated replacement locator. */
     public String textContent() {
-        return withHealing(Locator::textContent, false);
+        return withHealing(Locator::textContent);
     }
 
+    /** Checks visibility; a missing primary locator may trigger recovery. */
     public boolean isVisible() {
-        return Boolean.TRUE.equals(withHealing(Locator::isVisible, false));
+        return Boolean.TRUE.equals(withHealing(Locator::isVisible));
     }
 
-    private void withHealingVoid(LocatorVoidAction action, boolean navigationCanMeanSuccess) {
+    /** Adapts a void action to the shared recovery workflow. */
+    private void withHealingVoid(LocatorVoidAction action) {
         withHealing(locator -> {
             action.apply(locator);
             return null;
-        }, navigationCanMeanSuccess);
+        });
     }
 
-    private <T> T withHealing(LocatorAction<T> action, boolean navigationCanMeanSuccess) {
+    /** Tries the primary locator, investigates zero matches, records a proposal, and retries once. */
+    private <T> T withHealing(LocatorAction<T> action) {
         PlaywrightException lastFailure = null;
         List<String> skippedStrategies = new ArrayList<>();
         LocatorStrategy primaryStrategy = definition.primaryStrategy();
@@ -52,18 +59,17 @@ public final class SelfHealingElement {
             }
             skippedStrategies.add(primaryStrategy.name() + " (no matches)");
         } catch (PlaywrightException e) {
-            lastFailure = e;
-            skippedStrategies.add(primaryStrategy.name() + " (" + firstLine(e.getMessage()) + ")");
+            // An action may already have had side effects. Only missing locators trigger repair.
+            throw e;
         }
 
         HealingDecision decision = LOCATOR_RECOVERY.recover(page, definition);
         LocatorStrategy recoveryStrategy = decision.strategy();
         try {
             Locator locator = recoveryStrategy.resolve(page);
-            if (locator.count() > 0) {
+            if (locator.count() == 1) {
                 String beforeActionUrl = page.url();
-                T result = applyAction(action, locator.first(), navigationCanMeanSuccess);
-                HealingReport.recordMcpRecovery(
+                HealingReport.recordAgentRecovery(
                         definition.logicalName(),
                         recoveryStrategy.name(),
                         skippedStrategies,
@@ -72,7 +78,7 @@ public final class SelfHealingElement {
                         definition.hints(),
                         decision.recoveryDetails()
                 );
-                return result;
+                return action.apply(locator);
             }
             skippedStrategies.add(recoveryStrategy.name() + " (no matches)");
         } catch (PlaywrightException e) {
@@ -86,26 +92,11 @@ public final class SelfHealingElement {
                 Tried strategies:
                 %s
 
-                MCP-based locator recovery did not produce a usable locator candidate.
+                LLM healing agent did not produce a usable locator candidate.
                 """.formatted(definition.logicalName(), strategyNames()), lastFailure);
     }
 
-    private <T> T applyAction(LocatorAction<T> action, Locator locator, boolean navigationCanMeanSuccess) {
-        try {
-            return action.apply(locator);
-        } catch (PlaywrightException e) {
-            if (navigationCanMeanSuccess && isNavigationDuringAction(e)) {
-                return null;
-            }
-            throw e;
-        }
-    }
-
-    private boolean isNavigationDuringAction(PlaywrightException e) {
-        String message = e.getMessage();
-        return message != null && message.contains("Execution context was destroyed");
-    }
-
+    /** Shortens a Playwright error to one diagnostic line. */
     private String firstLine(String message) {
         if (message == null || message.isBlank()) {
             return "failed";
@@ -113,6 +104,7 @@ public final class SelfHealingElement {
         return message.lines().findFirst().orElse("failed");
     }
 
+    /** Formats the primary locator and hints for unresolved-element errors. */
     private String strategyNames() {
         StringBuilder builder = new StringBuilder();
         builder.append("- ").append(definition.primaryStrategy().name()).append(System.lineSeparator());
@@ -124,11 +116,13 @@ public final class SelfHealingElement {
 
     @FunctionalInterface
     private interface LocatorAction<T> {
+        /** Executes the caller's original operation on the resolved locator. */
         T apply(Locator locator);
     }
 
     @FunctionalInterface
     private interface LocatorVoidAction {
+        /** Executes the caller's original operation on the resolved locator. */
         void apply(Locator locator);
     }
 }

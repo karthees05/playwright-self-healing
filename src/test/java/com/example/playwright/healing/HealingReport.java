@@ -6,18 +6,27 @@ import java.util.List;
 public final class HealingReport {
     private static final ThreadLocal<List<String>> EVENTS = ThreadLocal.withInitial(ArrayList::new);
 
+    /** Prevents instantiation of this thread-local report utility. */
     private HealingReport() {
     }
 
+    /** Removes report events for the current scenario thread. */
     public static void clear() {
         EVENTS.remove();
     }
 
-    public static void recordFallback(String logicalName, String usedStrategy, List<String> skippedStrategies) {
-        recordMcpRecovery(logicalName, usedStrategy, skippedStrategies, List.of(), "", List.of());
+    /** Appends an investigation trace and its outcome or final scenario status. */
+    public static void recordAgentAttempt(String element, List<String> trace, String outcome) {
+        EVENTS.get().add("Element: " + element + "\n" + String.join("\n", trace) + "\n" + outcome);
     }
 
-    public static void recordMcpRecovery(
+    /** Records a basic recovery event with the selected and skipped strategies. */
+    public static void recordFallback(String logicalName, String usedStrategy, List<String> skippedStrategies) {
+        recordAgentRecovery(logicalName, usedStrategy, skippedStrategies, List.of(), "", List.of());
+    }
+
+    /** Records a selected locator and available recovery context before retry success is known. */
+    public static void recordAgentRecovery(
             String logicalName,
             String usedStrategy,
             List<String> skippedStrategies,
@@ -25,10 +34,11 @@ public final class HealingReport {
             String pageUrl,
             List<String> hints
     ) {
-        recordMcpRecovery(logicalName, usedStrategy, skippedStrategies, generatedCandidates, pageUrl, hints, "");
+        recordAgentRecovery(logicalName, usedStrategy, skippedStrategies, generatedCandidates, pageUrl, hints, "");
     }
 
-    public static void recordMcpRecovery(
+    /** Records a selected locator and available recovery context before retry success is known. */
+    public static void recordAgentRecovery(
             String logicalName,
             String usedStrategy,
             List<String> skippedStrategies,
@@ -40,7 +50,7 @@ public final class HealingReport {
         StringBuilder event = new StringBuilder()
                 .append("Element: ").append(logicalName).append(System.lineSeparator())
                 .append("Page URL: ").append(pageUrl).append(System.lineSeparator())
-                .append("Recovered by: ").append(usedStrategy).append(System.lineSeparator())
+                .append("Repair selected by (retry pending): ").append(usedStrategy).append(System.lineSeparator())
                 .append("Skipped strategies:").append(System.lineSeparator());
 
         for (String skippedStrategy : skippedStrategies) {
@@ -55,7 +65,7 @@ public final class HealingReport {
         }
 
         if (recoveryDetails != null && !recoveryDetails.isBlank()) {
-            event.append("Recovery details:").append(System.lineSeparator())
+            event.append("Agent investigation summary:").append(System.lineSeparator())
                     .append(recoveryDetails).append(System.lineSeparator());
         }
 
@@ -69,12 +79,14 @@ public final class HealingReport {
         EVENTS.get().add(event.toString());
     }
 
+    /** Checks whether the scenario has recovery information to attach. */
     public static boolean hasEvents() {
         return !EVENTS.get().isEmpty();
     }
 
+    /** Formats the current thread's events into a numbered plain-text report. */
     public static String render() {
-        StringBuilder report = new StringBuilder("MCP-based locator recovery events").append(System.lineSeparator());
+        StringBuilder report = new StringBuilder("LLM agent locator repair events").append(System.lineSeparator());
         List<String> events = EVENTS.get();
         for (int i = 0; i < events.size(); i++) {
             report.append(System.lineSeparator())

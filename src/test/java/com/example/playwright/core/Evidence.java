@@ -12,9 +12,11 @@ import java.time.format.DateTimeFormatter;
 public final class Evidence {
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss-SSS");
 
+    /** Prevents instantiation of this evidence utility. */
     private Evidence() {
     }
 
+    /** Saves timestamped screenshots and DOM evidence without replacing the test failure. */
     public static void captureFailure(String scenarioName) {
         Page page = DriverManager.page();
         Path scenarioDir = TestConfig.evidenceDir().resolve(safeName(scenarioName));
@@ -30,6 +32,7 @@ public final class Evidence {
         }
     }
 
+    /** Converts a scenario name into a filesystem-friendly directory name. */
     private static String safeName(String name) {
         return name.toLowerCase()
                 .replaceAll("[^a-z0-9]+", "-")

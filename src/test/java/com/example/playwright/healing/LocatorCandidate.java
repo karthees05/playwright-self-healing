@@ -5,5 +5,6 @@ import com.microsoft.playwright.Page;
 
 @FunctionalInterface
 public interface LocatorCandidate {
+    /** Creates a locator on the supplied page without executing an action. */
     Locator create(Page page);
 }

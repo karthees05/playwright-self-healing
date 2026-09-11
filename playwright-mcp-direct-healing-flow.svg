@@ -23,8 +23,8 @@
   </defs>
 
   <rect class="bg" width="1280" height="720"/>
-  <text x="60" y="52" class="title">Previous Direct MCP-based Locator Recovery Flow</text>
-  <text x="60" y="78" class="small">Invalid primary locator is healed by calling Playwright MCP directly; page objects do not define secondary locator chains.</text>
+  <text x="60" y="52" class="title">Historical: Direct Playwright MCP Recovery</text>
+  <text x="60" y="78" class="small">Earliest approach: Java calls MCP directly. No AI model, agent loop, or provider credentials. This is not the current branch flow.</text>
 
   <rect x="45" y="110" width="360" height="545" class="lane"/>
   <rect x="460" y="110" width="360" height="545" class="lane"/>
@@ -56,7 +56,7 @@
   <rect x="905" y="195" width="300" height="108" class="mcp"/>
   <text x="925" y="225" class="text">MCP server opens same URL</text>
   <text x="925" y="248" class="code">browser_navigate</text>
-  <text x="925" y="270" class="small">Builds accessibility snapshot</text>
+  <text x="925" y="270" class="small">Separate session; accessibility snapshot</text>
 
   <rect x="905" y="345" width="300" height="108" class="mcp"/>
   <text x="925" y="375" class="text">MCP finds target ref</text>
@@ -70,10 +70,10 @@
 
   <rect x="490" y="565" width="300" height="74" class="pass"/>
   <text x="510" y="595" class="text">Java retries with MCP locator</text>
-  <text x="510" y="618" class="small">Locator expression is converted to Playwright Java</text>
+  <text x="510" y="618" class="small">Convert expression to Playwright Java</text>
 
   <rect x="75" y="515" width="300" height="86" class="pass"/>
-  <text x="95" y="545" class="text">Scenario passes</text>
+  <text x="95" y="545" class="text">Successful retry is reported</text>
   <text x="95" y="568" class="small">Cucumber attaches self-healing report</text>
   <text x="95" y="588" class="code">Recovered by: Playwright MCP ...</text>
 
@@ -90,5 +90,5 @@
   <text x="650" y="552" class="small">generated locator returned</text>
 
   <rect x="60" y="670" width="1160" height="1.5" fill="#cbd5e1"/>
-  <text x="60" y="698" class="small">Report output: failed primary locator, URL before/after, MCP target ref, generated locator, scenario pass status.</text>
+  <text x="60" y="698" class="small">Historical success path shown. A generated locator does not guarantee a passing scenario; original business assertions remain necessary.</text>
 </svg>

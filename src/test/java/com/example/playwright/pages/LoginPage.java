@@ -31,20 +31,24 @@ public final class LoginPage extends BasePage {
             "error"
     );
 
+    /** Binds login interactions to the scenario's browser page. */
     public LoginPage(Page page) {
         super(page);
     }
 
+    /** Navigates to the practice login page under the configured base URL. */
     public void open() {
         page.navigate(TestConfig.baseUrl() + "/practice-test-login/");
     }
 
+    /** Fills credentials and clicks submit through the recovery wrapper. */
     public void login(String username, String password) {
         element(USERNAME).fill(username);
         element(PASSWORD).fill(password);
         element(SUBMIT).click();
     }
 
+    /** Reads the login error text for scenario assertions. */
     public String errorMessage() {
         return element(ERROR).textContent();
     }

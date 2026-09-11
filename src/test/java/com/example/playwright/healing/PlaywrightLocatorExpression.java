@@ -16,9 +16,11 @@ public final class PlaywrightLocatorExpression {
     private static final Pattern GET_BY_PLACEHOLDER = Pattern.compile("getByPlaceholder\\('([^']+)'\\)");
     private static final Pattern LOCATOR = Pattern.compile("locator\\('([^']+)'\\)");
 
+    /** Prevents instantiation of the expression converter. */
     private PlaywrightLocatorExpression() {
     }
 
+    /** Converts supported locator syntax into a Java locator factory without executing code. */
     public static Optional<LocatorCandidate> toCandidate(String expression) {
         return match(expression, GET_BY_ROLE)
                 .map(match -> (LocatorCandidate) page -> page.getByRole(toRole(match.group(1)),
@@ -33,11 +35,13 @@ public final class PlaywrightLocatorExpression {
                         .map(match -> (LocatorCandidate) page -> page.locator(match.group(1))));
     }
 
+    /** Matches the complete expression against allowed syntax, rejecting additional operations. */
     private static Optional<Matcher> match(String expression, Pattern pattern) {
         Matcher matcher = pattern.matcher(expression);
-        return matcher.find() ? Optional.of(matcher) : Optional.empty();
+        return matcher.matches() ? Optional.of(matcher) : Optional.empty();
     }
 
+    /** Maps an MCP role name to its Playwright Java ARIA role. */
     private static AriaRole toRole(String role) {
         return AriaRole.valueOf(role.toUpperCase(Locale.ROOT).replace('-', '_'));
     }

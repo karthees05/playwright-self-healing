@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="660" viewBox="0 0 1100 660" role="img" aria-labelledby="title desc">
+  <title id="title">LLM agent with Playwright MCP</title>
+  <desc id="desc">Model chooses browser inspection steps and proposes a generated locator. Java validates it, returns rejection feedback, or retries once. Errors and exhausted budgets fail with a report.</desc>
+  <defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="#444"/></marker>
+  <style>text{font:16px Arial;fill:#222}.small{font-size:14px}.title{font-size:28px;font-weight:bold}.box{fill:#fff;stroke:#777;stroke-width:2;rx:6}.model{fill:#e6f5ec;stroke:#28864a}.tool{fill:#e7f4fb;stroke:#26809c}.arrow{fill:none;stroke:#444;stroke-width:2;marker-end:url(#arrow)}</style></defs>
+  <rect width="1100" height="660" fill="#f8f9fa"/>
+  <text x="40" y="50" class="title">Current: LLM Agent + Playwright MCP</text>
+  <text x="40" y="80">Java runtime in local tests and GitHub Actions; OpenAI model and API key required.</text>
+  <rect x="40" y="130" width="290" height="90" class="box"/>
+  <text x="60" y="164">Primary locator has zero matches</text><text x="60" y="195" class="small">Intent, URL, locator, initial MCP snapshot</text>
+  <rect x="400" y="130" width="290" height="90" class="box model"/>
+  <text x="420" y="164">LlmHealingAgent + OpenAI</text><text x="420" y="195" class="small">Model chooses next investigation step</text>
+  <rect x="760" y="130" width="300" height="90" class="box tool"/>
+  <text x="780" y="164">Playwright MCP tools</text><text x="780" y="195" class="small">snapshot / find / generate locator</text>
+  <path d="M330 170 H400" class="arrow"/><path d="M690 160 H760" class="arrow"/>
+  <path d="M910 220 V265 H575 V220" class="arrow"/><text x="760" y="252" class="small">Tool observations</text>
+  <rect x="400" y="325" width="310" height="105" class="box"/>
+  <text x="420" y="355">Validate in original test browser</text><text x="420" y="384" class="small">MCP-generated expression required</text><text x="420" y="413" class="small">Exactly one visible, enabled match</text>
+  <path d="M520 220 V325" class="arrow"/>
+  <path d="M400 375 H360 V180 H400" class="arrow"/><text x="175" y="315" class="small">Rejection feedback</text>
+  <rect x="400" y="500" width="310" height="95" class="box model"/>
+  <text x="420" y="533">Record proposal and retry once</text><text x="420" y="560" class="small">Original assertions determine final status</text><text x="420" y="584" class="small">Attach llm-agent-repair-report.txt</text>
+  <path d="M555 430 V500" class="arrow"/>
+  <rect x="760" y="325" width="300" height="105" class="box"/>
+  <text x="780" y="355">Fail and attach investigation trace</text><text x="780" y="384" class="small">Abort / provider error / eight-step limit</text><text x="780" y="413" class="small">No deterministic fallback</text>
+  <path d="M670 220 V290 H910 V325" class="arrow"/>
+  <text x="780" y="462" class="small">Failure report attached; no retry</text>
+  <text x="40" y="638" class="small">MCP has a separate browser session. Runtime locator repair only; no source edits or model-controlled clicks.</text>
+</svg>

@@ -12,9 +12,11 @@ public final class DriverManager {
     private static final ThreadLocal<BrowserContext> CONTEXT = new ThreadLocal<>();
     private static final ThreadLocal<Page> PAGE = new ThreadLocal<>();
 
+    /** Prevents instantiation of the browser lifecycle utility. */
     private DriverManager() {
     }
 
+    /** Creates a browser, isolated context, and page for the current scenario thread. */
     public static void start() {
         Playwright playwright = Playwright.create();
         Browser browser = playwright.chromium().launch(new BrowserTypeOptions().toLaunchOptions());
@@ -30,6 +32,7 @@ public final class DriverManager {
         PAGE.set(page);
     }
 
+    /** Returns the current thread's page, failing if setup has not run. */
     public static Page page() {
         Page page = PAGE.get();
         if (page == null) {
@@ -38,6 +41,7 @@ public final class DriverManager {
         return page;
     }
 
+    /** Closes browser resources and clears the current thread's references. */
     public static void stop() {
         close(CONTEXT.get());
         close(BROWSER.get());
@@ -48,6 +52,7 @@ public final class DriverManager {
         PAGE.remove();
     }
 
+    /** Closes an optional resource without masking the original scenario failure. */
     private static void close(AutoCloseable closeable) {
         if (closeable == null) {
             return;
