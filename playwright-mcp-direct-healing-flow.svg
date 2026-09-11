@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" role="img" aria-labelledby="title desc">
-  <title id="title">Playwright MCP locator healing flow</title>
+  <title id="title">Previous direct MCP-based locator recovery flow</title>
   <desc id="desc">Flow showing how a Cucumber Playwright Java test recovers from an invalid locator by calling the official Playwright MCP server and retrying with the generated locator.</desc>
   <defs>
     <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
@@ -16,14 +16,14 @@
       .lane-title { font: 700 16px Arial, sans-serif; fill: #334155; }
       .text { font: 600 15px Arial, sans-serif; fill: #0f172a; }
       .small { font: 13px Arial, sans-serif; fill: #475569; }
-      .code { font: 13px Menlo, Consolas, monospace; fill: #334155; }
+      .code { font: 11px Menlo, Consolas, monospace; fill: #334155; }
       .arrow { stroke: #334155; stroke-width: 2; fill: none; marker-end: url(#arrow); }
       .muted { stroke: #94a3b8; stroke-width: 1.5; stroke-dasharray: 6 5; fill: none; marker-end: url(#arrow); }
     </style>
   </defs>
 
   <rect class="bg" width="1280" height="720"/>
-  <text x="60" y="52" class="title">Direct Playwright MCP Self-Healing Flow</text>
+  <text x="60" y="52" class="title">Previous Direct MCP-based Locator Recovery Flow</text>
   <text x="60" y="78" class="small">Invalid primary locator is healed by calling Playwright MCP directly; page objects do not define secondary locator chains.</text>
 
   <rect x="45" y="110" width="360" height="545" class="lane"/>
@@ -75,7 +75,7 @@
   <rect x="75" y="515" width="300" height="86" class="pass"/>
   <text x="95" y="545" class="text">Scenario passes</text>
   <text x="95" y="568" class="small">Cucumber attaches self-healing report</text>
-  <text x="95" y="588" class="code">Healed by: Playwright MCP ...</text>
+  <text x="95" y="588" class="code">Recovered by: Playwright MCP ...</text>
 
   <path class="arrow" d="M 225 249 L 225 295"/>
   <path class="arrow" d="M 375 338 L 490 338"/>

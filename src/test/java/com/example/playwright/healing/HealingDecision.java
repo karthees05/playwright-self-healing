@@ -5,6 +5,6 @@ import java.util.List;
 public record HealingDecision(
         LocatorStrategy strategy,
         List<String> generatedCandidates,
-        String agentReasoning
+        String recoveryDetails
 ) {
 }

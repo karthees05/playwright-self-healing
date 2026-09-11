@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public final class SelfHealingElement {
-    private static final AiSelfHealingAgent SELF_HEALING_AGENT = new AiSelfHealingAgent();
+    private static final McpLocatorRecovery LOCATOR_RECOVERY = new McpLocatorRecovery();
 
     private final Page page;
     private final ElementDefinition definition;
@@ -56,28 +56,28 @@ public final class SelfHealingElement {
             skippedStrategies.add(primaryStrategy.name() + " (" + firstLine(e.getMessage()) + ")");
         }
 
-        HealingDecision decision = SELF_HEALING_AGENT.heal(page, definition);
-        LocatorStrategy agentStrategy = decision.strategy();
+        HealingDecision decision = LOCATOR_RECOVERY.recover(page, definition);
+        LocatorStrategy recoveryStrategy = decision.strategy();
         try {
-            Locator locator = agentStrategy.resolve(page);
+            Locator locator = recoveryStrategy.resolve(page);
             if (locator.count() > 0) {
                 String beforeActionUrl = page.url();
                 T result = applyAction(action, locator.first(), navigationCanMeanSuccess);
-                HealingReport.recordAgentHealing(
+                HealingReport.recordMcpRecovery(
                         definition.logicalName(),
-                        agentStrategy.name(),
+                        recoveryStrategy.name(),
                         skippedStrategies,
                         decision.generatedCandidates(),
                         beforeActionUrl + " -> " + page.url(),
                         definition.hints(),
-                        decision.agentReasoning()
+                        decision.recoveryDetails()
                 );
                 return result;
             }
-            skippedStrategies.add(agentStrategy.name() + " (no matches)");
+            skippedStrategies.add(recoveryStrategy.name() + " (no matches)");
         } catch (PlaywrightException e) {
             lastFailure = e;
-            skippedStrategies.add(agentStrategy.name() + " (" + firstLine(e.getMessage()) + ")");
+            skippedStrategies.add(recoveryStrategy.name() + " (" + firstLine(e.getMessage()) + ")");
         }
 
         throw new AssertionError("""
@@ -86,7 +86,7 @@ public final class SelfHealingElement {
                 Tried strategies:
                 %s
 
-                AI self-healing agent did not produce a usable locator candidate.
+                MCP-based locator recovery did not produce a usable locator candidate.
                 """.formatted(definition.logicalName(), strategyNames()), lastFailure);
     }
 
@@ -117,7 +117,7 @@ public final class SelfHealingElement {
         StringBuilder builder = new StringBuilder();
         builder.append("- ").append(definition.primaryStrategy().name()).append(System.lineSeparator());
         for (String hint : definition.hints()) {
-            builder.append("- MCP agent hint: ").append(hint).append(System.lineSeparator());
+            builder.append("- MCP intent hint: ").append(hint).append(System.lineSeparator());
         }
         return builder.toString();
     }

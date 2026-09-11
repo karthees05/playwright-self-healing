@@ -23,7 +23,7 @@ public final class Hooks {
                 scenario.log(HealingReport.render());
                 scenario.attach(HealingReport.render().getBytes(StandardCharsets.UTF_8),
                         "text/plain",
-                        "self-healing-report.txt");
+                        "mcp-locator-recovery-report.txt");
             }
             if (scenario.isFailed()) {
                 Evidence.captureFailure(scenario.getName());

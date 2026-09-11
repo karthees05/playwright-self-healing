@@ -16,12 +16,16 @@ jobs:
 
     env:
       HEADLESS: "true"
-      AI_HEALING_ENABLED: "true"
-      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      PW_TIMEOUT_MS: "30000"
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
 
       - name: Set up Java
         uses: actions/setup-java@v4

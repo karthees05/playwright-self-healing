@@ -14,10 +14,10 @@ public final class HealingReport {
     }
 
     public static void recordFallback(String logicalName, String usedStrategy, List<String> skippedStrategies) {
-        recordAgentHealing(logicalName, usedStrategy, skippedStrategies, List.of(), "", List.of());
+        recordMcpRecovery(logicalName, usedStrategy, skippedStrategies, List.of(), "", List.of());
     }
 
-    public static void recordAgentHealing(
+    public static void recordMcpRecovery(
             String logicalName,
             String usedStrategy,
             List<String> skippedStrategies,
@@ -25,22 +25,22 @@ public final class HealingReport {
             String pageUrl,
             List<String> hints
     ) {
-        recordAgentHealing(logicalName, usedStrategy, skippedStrategies, generatedCandidates, pageUrl, hints, "");
+        recordMcpRecovery(logicalName, usedStrategy, skippedStrategies, generatedCandidates, pageUrl, hints, "");
     }
 
-    public static void recordAgentHealing(
+    public static void recordMcpRecovery(
             String logicalName,
             String usedStrategy,
             List<String> skippedStrategies,
             List<String> generatedCandidates,
             String pageUrl,
             List<String> hints,
-            String agentReasoning
+            String recoveryDetails
     ) {
         StringBuilder event = new StringBuilder()
                 .append("Element: ").append(logicalName).append(System.lineSeparator())
                 .append("Page URL: ").append(pageUrl).append(System.lineSeparator())
-                .append("Healed by: ").append(usedStrategy).append(System.lineSeparator())
+                .append("Recovered by: ").append(usedStrategy).append(System.lineSeparator())
                 .append("Skipped strategies:").append(System.lineSeparator());
 
         for (String skippedStrategy : skippedStrategies) {
@@ -48,15 +48,15 @@ public final class HealingReport {
         }
 
         if (!hints.isEmpty()) {
-            event.append("MCP agent hints:").append(System.lineSeparator());
+            event.append("MCP intent hints:").append(System.lineSeparator());
             for (String hint : hints) {
                 event.append("- ").append(hint).append(System.lineSeparator());
             }
         }
 
-        if (agentReasoning != null && !agentReasoning.isBlank()) {
-            event.append("Agent reasoning:").append(System.lineSeparator())
-                    .append(agentReasoning).append(System.lineSeparator());
+        if (recoveryDetails != null && !recoveryDetails.isBlank()) {
+            event.append("Recovery details:").append(System.lineSeparator())
+                    .append(recoveryDetails).append(System.lineSeparator());
         }
 
         if (!generatedCandidates.isEmpty()) {
@@ -74,7 +74,7 @@ public final class HealingReport {
     }
 
     public static String render() {
-        StringBuilder report = new StringBuilder("Self-healing locator events").append(System.lineSeparator());
+        StringBuilder report = new StringBuilder("MCP-based locator recovery events").append(System.lineSeparator());
         List<String> events = EVENTS.get();
         for (int i = 0; i < events.size(); i++) {
             report.append(System.lineSeparator())

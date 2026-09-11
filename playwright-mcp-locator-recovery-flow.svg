@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" role="img" aria-labelledby="title desc">
-  <title id="title">AI agent managed Playwright MCP locator healing flow</title>
-  <desc id="desc">Flow showing how a Cucumber Playwright Java test delegates an invalid locator failure to an AI self-healing agent that uses the official Playwright MCP server, validates the generated locator, retries the action, and writes a report.</desc>
+  <title id="title">MCP-based locator recovery flow</title>
+  <desc id="desc">Flow showing how a Cucumber Playwright Java test delegates an invalid locator failure to a Java recovery component that uses the official Playwright MCP server, validates the generated locator, retries the action, and writes a report.</desc>
   <defs>
     <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#334155"/>
@@ -9,7 +9,7 @@
       .bg { fill: #f8fafc; }
       .lane { fill: #ffffff; stroke: #cbd5e1; stroke-width: 1.5; }
       .box { fill: #f9fafb; stroke: #475569; stroke-width: 1.6; rx: 8; }
-      .agent { fill: #f5f3ff; stroke: #7c3aed; stroke-width: 1.8; rx: 8; }
+      .recovery { fill: #f5f3ff; stroke: #7c3aed; stroke-width: 1.8; rx: 8; }
       .mcp { fill: #ecfeff; stroke: #0e7490; stroke-width: 1.8; rx: 8; }
       .pass { fill: #ecfdf5; stroke: #15803d; stroke-width: 1.8; rx: 8; }
       .fail { fill: #fff7ed; stroke: #c2410c; stroke-width: 1.8; rx: 8; }
@@ -17,22 +17,22 @@
       .lane-title { font: 700 16px Arial, sans-serif; fill: #334155; }
       .text { font: 600 15px Arial, sans-serif; fill: #0f172a; }
       .small { font: 13px Arial, sans-serif; fill: #475569; }
-      .code { font: 13px Menlo, Consolas, monospace; fill: #334155; }
+      .code { font: 11px Menlo, Consolas, monospace; fill: #334155; }
       .arrow { stroke: #334155; stroke-width: 2; fill: none; marker-end: url(#arrow); }
       .muted { stroke: #94a3b8; stroke-width: 1.5; stroke-dasharray: 6 5; fill: none; marker-end: url(#arrow); }
     </style>
   </defs>
 
   <rect class="bg" width="1280" height="720"/>
-  <text x="60" y="52" class="title">AI Agent + Official Playwright MCP Self-Healing Flow</text>
-  <text x="60" y="78" class="small">Invalid primary locator is handled by an agent at runtime; page objects do not define secondary locator chains.</text>
+  <text x="60" y="52" class="title">MCP-based Locator Recovery Flow</text>
+  <text x="60" y="78" class="small">Invalid primary locator is handled by Java recovery logic at runtime; page objects do not define secondary locator chains.</text>
 
   <rect x="45" y="110" width="345" height="545" class="lane"/>
   <rect x="425" y="110" width="405" height="545" class="lane"/>
   <rect x="865" y="110" width="370" height="545" class="lane"/>
 
   <text x="65" y="140" class="lane-title">Test Code</text>
-  <text x="445" y="140" class="lane-title">AI Self-Healing Agent</text>
+  <text x="445" y="140" class="lane-title">MCP-based Locator Recovery</text>
   <text x="885" y="140" class="lane-title">Official Playwright MCP</text>
 
   <rect x="75" y="175" width="285" height="74" class="box"/>
@@ -47,10 +47,10 @@
   <rect x="455" y="175" width="345" height="84" class="fail"/>
   <text x="475" y="205" class="text">SelfHealingElement detects failure</text>
   <text x="475" y="228" class="code">button#submit-broken-for-healing-demo</text>
-  <text x="475" y="248" class="small">Failure context is passed to the agent</text>
+  <text x="475" y="248" class="small">Element definition and URL passed to recovery</text>
 
-  <rect x="455" y="305" width="345" height="104" class="agent"/>
-  <text x="475" y="335" class="text">AiSelfHealingAgent plans repair</text>
+  <rect x="455" y="305" width="345" height="104" class="recovery"/>
+  <text x="475" y="335" class="text">McpLocatorRecovery requests locator</text>
   <text x="475" y="358" class="small">Uses logical name, hints, URL, failed locator</text>
   <text x="475" y="380" class="small">Starts PlaywrightMcpClient when needed</text>
 
@@ -69,16 +69,16 @@
   <text x="915" y="528" class="code">browser_generate_locator</text>
   <text x="915" y="550" class="code">getByRole('button', { name: 'Submit' })</text>
 
-  <rect x="455" y="455" width="345" height="112" class="agent"/>
-  <text x="475" y="485" class="text">Agent validates decision</text>
+  <rect x="455" y="455" width="345" height="112" class="recovery"/>
+  <text x="475" y="485" class="text">Recovery converts locator</text>
   <text x="475" y="508" class="small">Converts MCP locator to Playwright Java</text>
   <text x="475" y="530" class="small">Rejects unsupported locator expressions</text>
-  <text x="475" y="552" class="small">Returns selected strategy and reasoning</text>
+  <text x="475" y="552" class="small">Returns locator strategy and recovery details</text>
 
   <rect x="75" y="515" width="285" height="86" class="pass"/>
   <text x="95" y="545" class="text">Retry passes and report is attached</text>
-  <text x="95" y="568" class="small">Cucumber logs agent reasoning</text>
-  <text x="95" y="588" class="code">Healed by: AI agent selected...</text>
+  <text x="95" y="568" class="small">Cucumber logs recovery details</text>
+  <text x="95" y="588" class="code">Recovered by: MCP-based recovery...</text>
 
   <path class="arrow" d="M 218 249 L 218 295"/>
   <path class="arrow" d="M 360 338 C 400 338 400 217 455 217"/>
@@ -90,8 +90,8 @@
   <path class="arrow" d="M 455 511 C 405 511 405 558 360 558"/>
 
   <path class="muted" d="M 628 409 L 628 455"/>
-  <text x="638" y="437" class="small">MCP result returned to agent</text>
+  <text x="638" y="437" class="small">MCP result returned to Java</text>
 
   <rect x="60" y="670" width="1160" height="1.5" fill="#cbd5e1"/>
-  <text x="60" y="698" class="small">Report output: failed primary locator, URL before/after, agent reasoning, MCP target ref, generated locator, scenario pass status.</text>
+  <text x="60" y="698" class="small">Report output: failed primary locator, URL before/after, recovery details, MCP target ref, generated locator, scenario pass status.</text>
 </svg>
